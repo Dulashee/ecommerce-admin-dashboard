@@ -27,12 +27,17 @@ router.post("/register", async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Only the first account can become admin via register (bootstrap).
+    // After that, all public sign-ups are customers.
+    const adminCount = await User.count({ where: { role: "admin" } });
+    const role =
+      req.body.role === "admin" && adminCount === 0 ? "admin" : "user";
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role: "user",
+      role,
     });
 
     res.status(201).json({
