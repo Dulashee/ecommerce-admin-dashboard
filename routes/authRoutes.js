@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -113,5 +114,24 @@ router.post("/login", async (req, res) => {
     });
   }
 });
+
+// PROTECTED PROFILE ROUTE
+router.get(
+  "/profile",
+  authMiddleware,
+  async (req, res) => {
+
+    res.json({
+      message: "Protected profile route",
+      user: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email,
+        role: req.user.role,
+      },
+    });
+
+  }
+);
 
 module.exports = router;
