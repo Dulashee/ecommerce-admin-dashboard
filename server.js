@@ -1,5 +1,14 @@
 require("dotenv").config();
 
+const fs = require("fs");
+const path = require("path");
+
+// Skip runtime bundling when a pre-built bundle exists (avoids OOM on Railway).
+const bundlePath = path.join(__dirname, ".adminjs", "bundle.js");
+if (fs.existsSync(bundlePath)) {
+  process.env.ADMIN_JS_SKIP_BUNDLE = "true";
+}
+
 const express = require("express");
 const { sequelize } = require("./models");
 const authRoutes = require("./routes/authRoutes");
@@ -23,8 +32,13 @@ const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
 
 async function start() {
-  console.log("Bundling AdminJS components (required for custom dashboard)...");
-  await admin.initialize();
+  if (!fs.existsSync(bundlePath)) {
+    console.log("No pre-built bundle found — bundling AdminJS components...");
+    await admin.initialize();
+  } else {
+    console.log("Using pre-built AdminJS bundle (.adminjs/bundle.js)");
+  }
+
   console.log("AdminJS ready");
 
   app.listen(PORT, "0.0.0.0", () => {
