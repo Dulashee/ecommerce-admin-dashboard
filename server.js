@@ -3,8 +3,10 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 
-// Skip runtime bundling when a pre-built bundle exists (avoids OOM on Railway).
-const bundlePath = path.join(__dirname, ".adminjs", "bundle.js");
+// Absolute path so AdminJS can serve .adminjs/bundle.js on Railway (not cwd-dependent).
+process.env.ADMIN_JS_TMP_DIR = path.join(__dirname, ".adminjs");
+
+const bundlePath = path.join(process.env.ADMIN_JS_TMP_DIR, "bundle.js");
 if (fs.existsSync(bundlePath)) {
   process.env.ADMIN_JS_SKIP_BUNDLE = "true";
 }
@@ -21,6 +23,21 @@ app.set("trust proxy", 1);
 
 // JSON parser only for API — must NOT run before AdminJS (login uses formidable)
 app.use("/api", express.json(), authRoutes);
+
+// Fallback: serve custom components bundle (fixes default dashboard on production)
+const componentsBundleUrl = `${admin.options.rootPath}/frontend/assets/components.bundle.js`;
+app.get(componentsBundleUrl, (req, res, next) => {
+  if (!fs.existsSync(bundlePath)) {
+    return next();
+  }
+  res.type("application/javascript; charset=utf-8");
+  res.sendFile(bundlePath, (err) => {
+    if (err) {
+      next(err);
+    }
+  });
+});
+
 app.use(admin.options.rootPath, adminRouter);
 
 app.get("/health", (req, res) => {
@@ -39,7 +56,16 @@ async function start() {
     console.log("No pre-built bundle found — bundling AdminJS components...");
     await admin.initialize();
   } else {
-    console.log("Using pre-built AdminJS bundle (.adminjs/bundle.js)");
+    const bundleSize = fs.statSync(bundlePath).size;
+    console.log(
+      `Using pre-built AdminJS bundle (${bundlePath}, ${bundleSize} bytes)`
+    );
+    if (bundleSize < 1000) {
+      console.error(
+        "Bundle file is too small — run: npm run build, then commit .adminjs/bundle.js"
+      );
+      process.exit(1);
+    }
   }
 
   console.log("AdminJS ready");

@@ -1,5 +1,9 @@
 process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
+const path = require("path");
+
+process.env.ADMIN_JS_TMP_DIR = path.join(__dirname, "..", ".adminjs");
+
 require("dotenv").config();
 
 const { admin } = require("../admin/admin");
