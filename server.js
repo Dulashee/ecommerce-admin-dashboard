@@ -3,8 +3,8 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 
-// Absolute path so AdminJS can serve .adminjs/bundle.js on Railway (not cwd-dependent).
-process.env.ADMIN_JS_TMP_DIR = path.join(__dirname, ".adminjs");
+// No leading dot — Express send() ignores dotfolders like ".adminjs" (404 in production).
+process.env.ADMIN_JS_TMP_DIR = path.join(__dirname, "adminjs-components");
 
 const bundlePath = path.join(process.env.ADMIN_JS_TMP_DIR, "bundle.js");
 if (fs.existsSync(bundlePath)) {
@@ -31,11 +31,7 @@ app.get(componentsBundleUrl, (req, res, next) => {
     return next();
   }
   res.type("application/javascript; charset=utf-8");
-  res.sendFile(bundlePath, (err) => {
-    if (err) {
-      next(err);
-    }
-  });
+  res.send(fs.readFileSync(bundlePath, "utf8"));
 });
 
 app.use(admin.options.rootPath, adminRouter);
@@ -62,7 +58,7 @@ async function start() {
     );
     if (bundleSize < 1000) {
       console.error(
-        "Bundle file is too small — run: npm run build, then commit .adminjs/bundle.js"
+        "Bundle file is too small — run: npm run build, then commit adminjs-components/bundle.js"
       );
       process.exit(1);
     }

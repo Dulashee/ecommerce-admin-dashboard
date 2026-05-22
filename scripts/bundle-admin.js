@@ -2,7 +2,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
 const path = require("path");
 
-process.env.ADMIN_JS_TMP_DIR = path.join(__dirname, "..", ".adminjs");
+process.env.ADMIN_JS_TMP_DIR = path.join(__dirname, "..", "adminjs-components");
 
 require("dotenv").config();
 
@@ -11,7 +11,7 @@ const { admin } = require("../admin/admin");
 admin
   .initialize()
   .then(() => {
-    console.log("AdminJS user components bundled (.adminjs/bundle.js)");
+    console.log("AdminJS user components bundled (adminjs-components/bundle.js)");
     process.exit(0);
   })
   .catch((err) => {
