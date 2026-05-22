@@ -1,10 +1,14 @@
 const express = require("express");
 const { sequelize } = require("./models");
+const authRoutes = require("./routes/authRoutes");
+const { admin, adminRouter } = require("./admin/admin");
 require("dotenv").config();
 
 const app = express();
 
 app.use(express.json());
+app.use("/api", authRoutes);
+app.use(admin.options.rootPath, adminRouter);
 
 app.get("/", (req, res) => {
   res.send("Server Running...");
