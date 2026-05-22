@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { where, fn, col } = require("sequelize");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -11,11 +12,20 @@ const { User } = require("../models");
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Name, email, and password are required",
+      });
+    }
 
     // Check existing user
     const existingUser = await User.findOne({
-      where: { email },
+      where: where(fn("lower", col("email")), email),
     });
 
     if (existingUser) {
@@ -63,11 +73,19 @@ router.post("/register", async (req, res) => {
 // LOGIN
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
 
-    // Find user
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
     const user = await User.findOne({
-      where: { email },
+      where: where(fn("lower", col("email")), email),
     });
 
     if (!user) {

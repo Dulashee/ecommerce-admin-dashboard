@@ -16,8 +16,11 @@ const { admin, adminRouter } = require("./admin/admin");
 
 const app = express();
 
-app.use(express.json());
-app.use("/api", authRoutes);
+// Required on Railway so secure session cookies work behind HTTPS proxy
+app.set("trust proxy", 1);
+
+// JSON parser only for API — must NOT run before AdminJS (login uses formidable)
+app.use("/api", express.json(), authRoutes);
 app.use(admin.options.rootPath, adminRouter);
 
 app.get("/health", (req, res) => {

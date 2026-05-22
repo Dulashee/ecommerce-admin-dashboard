@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { Op } = require("sequelize");
+const { Op, where, fn, col } = require("sequelize");
 const AdminJS = require("adminjs");
 const AdminJSExpress = require("@adminjs/express");
 const AdminJSSequelize = require("@adminjs/sequelize");
@@ -779,11 +779,32 @@ const admin = new AdminJS({
   ],
 });
 
+const cookiePassword =
+  process.env.COOKIE_PASSWORD ||
+  process.env.SESSION_SECRET ||
+  process.env.JWT_SECRET;
+
+if (!cookiePassword) {
+  console.warn(
+    "Warning: set COOKIE_PASSWORD on Railway or AdminJS login will fail"
+  );
+}
+
 const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
   admin,
   {
     authenticate: async (email, password) => {
-      const user = await User.findOne({ where: { email } });
+      const normalizedEmail = String(email || "")
+        .trim()
+        .toLowerCase();
+
+      if (!normalizedEmail || !password) {
+        return null;
+      }
+
+      const user = await User.findOne({
+        where: where(fn("lower", col("email")), normalizedEmail),
+      });
 
       if (!user) {
         return null;
@@ -803,14 +824,18 @@ const adminRouter = AdminJSExpress.buildAuthenticatedRouter(
       };
     },
 
-    cookiePassword:
-      process.env.COOKIE_PASSWORD || process.env.JWT_SECRET,
+    cookiePassword,
   },
   null,
   {
-    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24,
+    },
   }
 );
 
