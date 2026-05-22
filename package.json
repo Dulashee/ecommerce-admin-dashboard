@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "node scripts/bundle-admin.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },

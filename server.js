@@ -22,9 +22,15 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 5000;
 const isProduction = process.env.NODE_ENV === "production";
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Admin panel: http://localhost:${PORT}${admin.options.rootPath}`);
+async function start() {
+  console.log("Bundling AdminJS components (required for custom dashboard)...");
+  await admin.initialize();
+  console.log("AdminJS ready");
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Admin panel: /admin`);
+  });
 
   sequelize
     .sync(isProduction ? {} : { alter: true })
@@ -35,4 +41,10 @@ app.listen(PORT, "0.0.0.0", () => {
       console.error("Database sync error:");
       console.error(err);
     });
+}
+
+start().catch((err) => {
+  console.error("Failed to start server:");
+  console.error(err);
+  process.exit(1);
 });

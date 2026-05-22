@@ -12,6 +12,11 @@ const orderShowComponent = componentLoader.add(
   "./components/OrderShow"
 );
 
+const dashboardComponent = componentLoader.add(
+  "Dashboard",
+  "./components/Dashboard"
+);
+
 async function buildOrderLinesJson(orderId) {
   const items = await OrderItem.findAll({
     where: { orderId },
@@ -166,7 +171,7 @@ const admin = new AdminJS({
   },
 
   dashboard: {
-    component: componentLoader.add("Dashboard", "./components/Dashboard"),
+    component: dashboardComponent,
 
     handler: async (request, response, context) => {
       const { currentAdmin } = context;
