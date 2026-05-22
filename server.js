@@ -1,8 +1,9 @@
+require("dotenv").config();
+
 const express = require("express");
 const { sequelize } = require("./models");
 const authRoutes = require("./routes/authRoutes");
 const { admin, adminRouter } = require("./admin/admin");
-require("dotenv").config();
 
 const app = express();
 
@@ -10,22 +11,28 @@ app.use(express.json());
 app.use("/api", authRoutes);
 app.use(admin.options.rootPath, adminRouter);
 
+app.get("/health", (req, res) => {
+  res.status(200).send("ok");
+});
+
 app.get("/", (req, res) => {
-  res.send("Server Running...");
+  res.redirect(admin.options.rootPath);
 });
 
 const PORT = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === "production";
 
-sequelize
-  .sync({ alter: true })
-  .then(() => {
-    console.log("Database connected successfully");
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Admin panel: http://localhost:${PORT}${admin.options.rootPath}`);
 
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
+  sequelize
+    .sync(isProduction ? {} : { alter: true })
+    .then(() => {
+      console.log("Database connected and synced");
+    })
+    .catch((err) => {
+      console.error("Database sync error:");
+      console.error(err);
     });
-  })
-  .catch((err) => {
-    console.log("Database connection error:");
-    console.log(err);
-  });
+});
