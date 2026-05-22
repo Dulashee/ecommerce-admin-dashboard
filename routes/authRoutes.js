@@ -11,7 +11,7 @@ const { User } = require("../models");
 // REGISTER
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     // Check existing user
     const existingUser = await User.findOne({
@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role,
+      role: "user",
     });
 
     res.status(201).json({
